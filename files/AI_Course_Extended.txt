@@ -1,0 +1,246 @@
+ARTIFICIAL INTELLIGENCE — SEARCH ALGORITHMS AND RAG PRACTICE
+Extended teaching document for a CrewAI RagTool experiment
+
+PURPOSE: This synthetic course handout is designed for practicing semantic indexing and retrieving several relevant passages. It contains multiple sections comparing BFS, DFS, UCS, Greedy Best-First Search, and A*, plus introductory RAG concepts. It is a teaching example, not an official university syllabus.
+
+=====================================================================
+
+====================================================================
+01. Introduction to intelligent search and knowledge retrieval
+====================================================================
+
+Artificial intelligence often studies problems in which an agent must select a sequence of actions to reach a goal. The environment can be represented as a graph of states, with edges corresponding to legal actions. Search algorithms differ in how they select the next state to expand and in what guarantees they provide. Some algorithms ignore costs, some consider cumulative path costs, and some add a heuristic estimate of remaining cost. The distinction matters in route planning, robotics, automated scheduling, games, and puzzle solving.
+
+A search problem includes an initial state, available actions, a transition model, a goal test, and optionally a cost function. The state space may be small and explicit, or it may be generated incrementally by a successor function. We distinguish a state from a search-tree node: the same state can be reached along different paths and may appear multiple times in a search tree unless the algorithm detects duplicates.
+
+For this document, assume search proceeds over a finite graph unless a section says otherwise. An expanded node is one whose successors have been considered. The frontier stores discovered nodes that have not yet been expanded. A visited or explored set can prevent wasteful repetition, but its timing and interaction with better paths must be chosen carefully.
+
+====================================================================
+02. Breadth-first search: frontier and expansion
+====================================================================
+
+Breadth-first search (BFS) expands the shallowest frontier node first. Its natural data structure is a first-in, first-out queue. Initialize the queue with the start node. Then remove the front item, test or confirm the goal according to the selected implementation, and insert eligible neighbors at the back. When edges all have the same unit cost, the algorithm searches in increasing path length measured in number of edges.
+
+Consider a campus grid with the start at (0,0) and the goal at (2,2). A BFS that checks neighbors in right, down, left, up order explores states by number of moves from the start. It cannot be diverted by a long series of moves that merely look promising visually; it completes each depth layer before going deeper. Parent pointers can reconstruct a solution: whenever a node is first discovered, record which earlier node discovered it.
+
+In graph search, mark a state as discovered when it enters the queue. If marking is delayed until removal, the same state may be added to the queue several times by different parents. That version may still be made correct, but it wastes memory and creates extra work. For introductory unweighted maze examples, mark-on-enqueue is the simplest policy.
+
+====================================================================
+03. Why BFS finds shortest unweighted paths
+====================================================================
+
+BFS is optimal for shortest paths in an unweighted graph when each move has the same positive cost, usually treated as one. When a node at depth d is expanded, all shallower reachable depths have already been considered. Consequently, the first time the goal is discovered under the ordinary queue policy, its depth is minimal. This guarantee does not require a heuristic.
+
+Imagine two ways to reach a laboratory: a path through four corridors and a path through six corridors. If every corridor counts as one move, BFS selects the four-corridor path. But suppose one corridor requires walking up six flights of stairs. Now the four-edge route may have a higher physical effort cost than the six-edge route. BFS still minimizes number of edges, not walking effort. This is why "shortest" must be tied to a clearly defined objective.
+
+BFS is complete on a finite graph and, under standard finite branching assumptions, will find a goal at finite depth if one exists. Its memory use is a concern: it must retain much of the frontier at each search depth. When branching factor is b and the shallowest solution depth is d, introductory tree-search analysis often gives exponential time and space growth, around O(b^(d+1)).
+
+====================================================================
+04. Depth-first search: stack, recursion, and backtracking
+====================================================================
+
+Depth-first search (DFS) selects a newly discovered successor and continues down that branch until it cannot proceed, then backtracks. A last-in, first-out stack or recursive calls naturally implement this behavior. DFS can find a distant goal quickly when the chosen branch happens to be favorable. However, it does not systematically explore shallow paths first and does not guarantee a shortest solution.
+
+For a maze, consider neighbors in the order up, right, down, left. DFS follows its first eligible neighbor and may travel far into a dead end. It then returns to the latest node with an untried neighbor. A stack frame represents the unfinished work at that node. The method is often useful for connectivity checks, topological exploration, cycle detection, and exhaustive search with backtracking.
+
+In a finite graph, a visited set protects DFS from repeatedly following cycles. In an infinite-depth state space, naïve DFS can pursue an unending branch even though a goal exists elsewhere. Memory can be comparatively low: a classic tree-search bound is O(bm), where m is maximum search depth, while runtime can still be exponential. DFS can be faster than BFS on a lucky traversal, but that is not a general guarantee.
+
+====================================================================
+05. Uniform-cost search: cumulative path cost
+====================================================================
+
+Uniform-cost search (UCS) expands the frontier node with the lowest cumulative path cost g(n). The frontier is a priority queue ordered by g. Unlike BFS, UCS allows unequal edge weights. When every edge has unit cost, UCS behaves similarly to BFS in terms of the path-cost ordering, although implementation details may produce different tie handling.
+
+Suppose a delivery robot can choose path S-A-G with edge costs 1 and 10, or S-B-C-G with costs 2, 2, and 2. BFS prefers S-A-G because it has two edges rather than three. UCS instead chooses S-B-C-G because the total cost is 6 rather than 11. This example illustrates that search quality is always relative to the chosen cost model.
+
+For UCS with nonnegative edge weights, track the best known g for each state. A better route to a state should update the candidate frontier entry. Under standard conditions, the first time the goal is removed for expansion, UCS has found a least-cost path. Early termination merely on goal generation is not generally safe for UCS. Weighted path planning for roads, energy usage, and travel time are common settings for this technique.
+
+====================================================================
+06. Greedy best-first search: the heuristic alone
+====================================================================
+
+Greedy best-first search prioritizes states by an estimate h(n) of distance or cost from the state to the goal. It does not add the cost already paid to reach that state. It can therefore move toward a goal according to the heuristic while overlooking an expensive detour already taken. In many practical cases it reaches a goal rapidly, but it is not guaranteed to find a least-cost route.
+
+Consider a warehouse in which one apparent shortcut points directly toward the destination but passes through a high-cost safety gate. A greedy search might prefer the shortcut because its h score is small, despite the resulting total cost being large. A second route may initially move farther away from the destination, yet be cheaper overall. The example is especially relevant when costs are not proportional to geometric distance.
+
+Greedy best-first search illustrates the difference between informed search and optimal search. A heuristic can guide exploration, but simply having a heuristic does not make a search method optimal. To account for accumulated cost and estimated remaining cost together, A* combines g and h. The success of a heuristic-guided technique depends on heuristic quality, graph structure, duplicate management, and the definition of path cost.
+
+====================================================================
+07. A* search: combining known cost and estimated cost
+====================================================================
+
+A* search ranks nodes using f(n) = g(n) + h(n). Here g(n) is the best known cost from the start to n, while h(n) estimates the remaining cost from n to the goal. A priority queue expands the frontier entry with the smallest f value. If the heuristic never overestimates remaining optimal cost and other necessary implementation conditions hold, A* can find an optimal path.
+
+For an illustrative maze, suppose a node has accumulated path cost g=7 and its heuristic estimate to the goal is h=4. Then f=11. Another node has g=5 but h=8, yielding f=13. A* currently prefers the first node, even though reaching it cost more, because its estimated overall solution cost is lower. The f value is not the final cost of a completed path; it is a ranking estimate for an unfinished path.
+
+A* becomes UCS when h(n)=0 for every node. This relationship helps students understand why heuristics can accelerate search: an informative estimate makes the frontier ordering more goal-directed. However, a misleading heuristic may waste expansions. A* normally requires bookkeeping for the best known cost to each state, and nodes may need to be reopened depending on the search version and heuristic consistency.
+
+====================================================================
+08. Admissible and consistent heuristics
+====================================================================
+
+A heuristic is admissible when h(n) never exceeds the true minimal remaining cost h*(n) for any state. Admissibility means the estimate is optimistic or exact. On a grid with four-directional unit-cost moves, Manhattan distance is admissible when obstacles can force detours but never create a route shorter than the raw horizontal-plus-vertical distance. It is a lower bound on the number of required unit moves.
+
+A heuristic is consistent, or monotone, when h(n) <= c(n,n') + h(n') for every allowed edge from n to n', with h(goal)=0. Consistency is analogous to a triangle inequality. It guarantees that estimated f values do not decrease along paths under usual assumptions, simplifying closed-set graph-search behavior. An admissible heuristic need not be consistent in arbitrary graphs.
+
+Consider the difference between an exact distance and an approximation. If the least possible remaining cost is 10, a heuristic of 8 is admissible but less informative than 9. A heuristic of 12 is an overestimate and not admissible at that state. Using a larger value can sometimes speed search by favoring apparent goal proximity, but it may sacrifice optimality. Heuristic accuracy and correctness must not be confused with mere search speed.
+
+====================================================================
+09. Manhattan distance in grid environments
+====================================================================
+
+For a two-dimensional grid with four-directional movement, define Manhattan distance as h(x,y)=|x-x_goal|+|y-y_goal|. If moving horizontally or vertically by one cell costs one unit, this counts the minimum number of moves in an obstacle-free environment. Walls and blocked cells usually make the real route longer, so the heuristic remains optimistic.
+
+Example: a robot stands at (2,3) and aims for (7,8). Manhattan distance is |2-7|+|3-8|=10. This is an estimate, not a plan. It does not identify which intermediate cells are blocked. A* still expands nodes and checks legal transitions to discover a feasible route. A larger map can contain a wall that makes a ten-step geometric lower bound correspond to a fourteen-step actual route.
+
+Manhattan distance may become inappropriate when diagonal movement is allowed at low cost. In that case, diagonal or octile distances can be more informative. Similarly, a weighted grid with varying movement costs requires a lower-bound cost scaling. A heuristic should be derived from the rules of the specific problem, not copied blindly from another environment.
+
+====================================================================
+10. Worked comparison: BFS versus A* in a grid maze
+====================================================================
+
+Assume a unit-cost grid maze with a start S, a goal G, and blocked cells. BFS uses only depth in edges, so it expands cells in successive layers. A* computes g, h, and f for frontier cells, using Manhattan distance as its heuristic. Both may return equally short paths when A* is properly configured and the heuristic is admissible. Their number of expanded nodes can differ substantially, even when final path length is identical.
+
+For a particular frontier moment, assume BFS has enqueued nodes at depths 4 and 5. It will finish all eligible depth-4 nodes before exploring depth-5 nodes. A* might prioritize a depth-5 node with g=5, h=2, f=7 over a depth-4 node with g=4, h=8, f=12. A* is using an estimate of total route cost, not simply a preference for deeper or shallower states.
+
+This is the most important conceptual distinction for classroom exercises: BFS is uninformed, relying on the number of moves already taken, while A* is informed, combining known cost and a heuristic. A* can be more efficient with a good heuristic, but it is not universally faster. A zero heuristic makes its behavior close to UCS, and a weak or misleading heuristic may save little work.
+
+====================================================================
+11. Worked comparison: BFS versus UCS versus A*
+====================================================================
+
+Consider a directed navigation graph with routes S-A-G costing 1+10=11 and S-B-C-G costing 2+2+2=6. BFS chooses the route with two edges, S-A-G, because it minimizes depth. UCS chooses S-B-C-G because it minimizes the sum of edge costs. A* may also choose S-B-C-G while expanding fewer states if its heuristic helps identify promising nodes without overestimating.
+
+The three algorithms answer different questions. BFS asks: which reachable goal uses the fewest actions when actions are equally costly? UCS asks: what is the cheapest cumulative-cost route with unequal costs? A* asks: can we retain least-cost route guarantees while using estimated remaining cost to prioritize the search more effectively? This framing is often more useful than memorizing the formulas alone.
+
+A convenient way to understand A* is to compare its evaluation keys. BFS effectively prioritizes depth d when edges are uniform, UCS prioritizes g, and A* prioritizes g+h. Greedy best-first search prioritizes h alone. The shared priority-queue implementation for UCS, greedy best-first, and A* hides a critical conceptual difference: the queue's priority expression determines the algorithm's behavior.
+
+====================================================================
+12. BFS implementation details: duplicate detection and parents
+====================================================================
+
+BFS needs a FIFO queue and a rule for avoiding repeated states. A common pseudocode pattern is: initialize queue=[start]; discovered={start}; parent[start]=None. While the queue is not empty, pop from its front. If this state is a goal, follow parent pointers backward and reverse the resulting path. Otherwise inspect each legal neighbor. If the neighbor is not discovered, mark it discovered, set its parent to the current state, and append it to the queue.
+
+A frequent student mistake occurs when a node is generated twice before either copy is expanded. Suppose node (4,3) is reachable from both (3,3) and (4,2). If it entered the queue when expanding (3,3), it should not be enqueued again when expanding (4,2). Marking on enqueue guarantees this. The first discovery fixes a shortest-depth parent in the unit-cost setting.
+
+In a teaching exercise, maintain a table with columns iteration, dequeued state, enqueued neighbors, queue contents, and parent assignments. This makes BFS traceable by hand. The shortest path is not simply the complete sequence of visited nodes; it is the parent-pointer chain from the goal to the start.
+
+====================================================================
+13. A* implementation details: priority updates and revisiting
+====================================================================
+
+A* normally stores for each discovered state a best known g score and a parent pointer. For a candidate neighbor reached from current, compute tentative_g = g(current) + edge_cost. If that is better than the previously recorded cost, update g, compute f=tentative_g + h(neighbor), set the parent, and arrange for the frontier to reflect the new priority. A priority queue may contain stale entries unless the implementation explicitly supports decrease-key operations.
+
+Suppose state X was first discovered at cost g=12, but a later route reaches X at cost g=8. A* must use the better route; otherwise the algorithm may keep a needlessly expensive parent chain. If the heuristic is inconsistent, a closed state may sometimes need reopening. With a consistent heuristic and standard graph-search assumptions, closing a state upon best-cost expansion is sufficient.
+
+At each step of a manual A* trace, record node coordinates, g, h, f, parent, and whether the state is open or closed. Avoid conflating the cost of moving from a node to a neighbor, c(u,v), with the cumulative cost g(v). The heuristic h(v) estimates cost from v to the goal, not from the start to v.
+
+====================================================================
+14. BFS and A*: complexity and memory tradeoffs
+====================================================================
+
+BFS is easy to implement and does not require a heuristic. The drawback is often memory: it retains an expanding frontier of nodes at progressively greater depths. In an implicit search tree with branching factor b and shallowest goal depth d, both time and space can grow exponentially with d. In an explicit finite graph using an adjacency list and visited set, basic BFS takes O(V+E) time and O(V) storage.
+
+A* performance depends heavily on heuristic informativeness and the number of reachable alternatives with competitive f values. Its worst-case time and storage can also be exponential in solution depth for many problem families. The priority queue and g-score map add overhead compared with a plain BFS queue. An admissible heuristic does not automatically ensure a lower runtime on every instance, particularly for small graphs or poor heuristic estimates.
+
+Therefore, the right comparison reports more than wall-clock time. Useful measurements include number of expanded states, number of generated states, maximum frontier size, discovered states, final path length, and total path cost. On a uniform-cost maze, comparing expanded states while holding solution quality fixed demonstrates the role of informed guidance.
+
+====================================================================
+15. Weighted graphs and realistic navigation costs
+====================================================================
+
+Real navigation tasks often assign different costs to edges. A longer corridor may be easier to traverse than a short staircase. A driving route might optimize estimated time rather than geographic distance. An industrial robot may optimize electricity consumption, avoid vibration, or impose penalties near hazardous machinery. An algorithm can only optimize the objective actually encoded in its edge costs.
+
+Consider a 3D drone route between buildings. A movement between waypoints u and v may be assigned cost c(u,v)=sqrt((xv-xu)^2+(yv-yu)^2+(zv-zu)^2)+2|zv-zu|. The first term measures straight-line travel distance. The second penalizes vertical movement, modeling an illustrative extra energy cost for changing altitude. The coefficient 2 has units appropriate to the simplified objective, not necessarily a direct physical measurement.
+
+If the destination is on ground level, a heuristic h(n)=EuclideanDistance(n,G)+2|zn-zG| can be a useful lower bound when its components do not exceed the cost that any valid route must pay. Its admissibility should be verified under the allowed moves and cost assumptions. Choosing a larger altitude penalty in the heuristic than in the true movement cost may overestimate and remove an optimality guarantee.
+
+====================================================================
+16. Laboratory exercise: trace BFS on a small map
+====================================================================
+
+Create a rectangular maze with a start S at coordinate (0,0), a goal G at (4,3), and obstacle cells at (1,1), (2,1), and (3,1). Assume moves are allowed only up, down, left, and right, each with cost one, and that coordinates are (column,row). Ask students to draw the maze, list valid successors, and trace BFS using right, down, left, up as the neighbor order. Every time a state is inserted into the queue, record the parent node.
+
+The trace should explicitly distinguish states that are visited, states on the frontier, and states just expanded. It should also display when a generated successor is skipped because it has already been discovered. After the goal is reached, reconstruct the final path using stored parents. The path is read by backtracking from G to S and reversing the result.
+
+After finishing, ask students whether changing neighbor order can change the specific returned shortest path. It can change which equal-length route is selected, but not the minimum path length in a unit-cost grid. This is a helpful comparison between deterministic implementation choices and mathematical algorithm guarantees.
+
+====================================================================
+17. Laboratory exercise: trace A* with Manhattan distance
+====================================================================
+
+Reuse the unit-cost maze from the BFS exercise. Add Manhattan distance to the goal for each reachable cell, and track three values: g(n), h(n), and f(n). Initially g(S)=0 and f(S)=h(S). A* removes the frontier item with smallest f and updates neighboring cells when it discovers an improved cumulative cost. For ties, apply a stated and consistent rule, such as smaller h followed by insertion order.
+
+At every iteration, write a table of the open set ordered by f, the selected state, neighbors evaluated, any g-score updates, and closed states. Comparing this A* trace to the BFS trace clarifies why A* can concentrate exploration nearer to the destination while BFS remains organized by depth. Both should still find shortest path length when all moves cost one and Manhattan distance is admissible.
+
+A good follow-up experiment sets h=0 everywhere, then reruns the same graph. The resulting algorithm behaves like uniform-cost search. Another experiment doubles Manhattan distance, which might be faster on some layouts but is generally no longer admissible. Students should record whether the produced path remains optimal rather than assuming that a faster search means a better search algorithm.
+
+====================================================================
+18. Heuristics in three-dimensional drone planning
+====================================================================
+
+In drone navigation, nodes may represent safe waypoints above roofs and between buildings, while the start and goal may lie at ground level. The search graph must contain only legal flights that avoid obstacles and no-fly regions. Coordinates should be given for each waypoint; edges represent permitted connections. The graph can be visualized with node labels (x,y,z), edge costs, and heuristic labels.
+
+Assume c(u,v)=d3D(u,v)+2|zu-zv| and h(n)=d3D(n,G)+2|zn-zG|. Because sums of Euclidean edge distances bound the direct Euclidean distance, and sums of absolute altitude changes bound net altitude change, this heuristic is admissible under this cost model. The key is that both heuristic components are separately lower bounds on their respective path-cost contributions.
+
+Now consider a modified heuristic with coefficient 3 on altitude change while the movement cost keeps coefficient 2. That heuristic can exceed the actual remaining travel cost for some nodes. A* may then find a route quickly but can lose its usual optimality guarantee. The lesson is not that the number 3 is forbidden; it is that admissibility follows from mathematical comparison with actual costs, not from a heuristic merely appearing plausible.
+
+====================================================================
+19. Comparing retrieved documents to language-model memory
+====================================================================
+
+A general language model can explain standard algorithms from training, but it does not automatically know the precise definitions, tie-breaking policies, diagrams, and assignments in a local course. Retrieval-augmented generation addresses this gap by locating relevant passages in indexed course materials and supplying them as context for generation. The assistant should make a distinction between document-supported information and additional background explanation.
+
+A sample student question might be: 'According to the course material, how do BFS and A* differ in their frontier ordering and optimality conditions?' The retrieval system should find passages on queue ordering, f(n)=g(n)+h(n), Manhattan heuristics, and solution-cost assumptions. A good response summarizes those passages rather than sending the entire course document into a single prompt.
+
+Retrieval is not proof that the final generated answer is correct. If the document is incomplete, a search may return weakly related chunks or no suitable result. The agent should state uncertainty when relevant evidence is missing. Teachers can evaluate retrieval separately from answer generation by displaying the text passages delivered by the retriever before examining the response from the language model.
+
+====================================================================
+20. RAG indexing: chunks, embeddings, and vector databases
+====================================================================
+
+A typical retrieval-augmented generation pipeline begins by loading files, extracting text, and dividing documents into chunks. Each chunk receives a numeric embedding that represents semantic features of its content. The embeddings and original passages are stored together in a vector database, often with metadata such as a source filename, heading, and page number. The query is embedded using a compatible model, and a similarity search ranks candidate passages.
+
+Chunk size affects the balance between context and focus. Very small chunks may omit definitions needed to understand a passage, while overly large chunks can mix unrelated topics and waste the LLM context window. Chunk overlap can help preserve continuity at boundaries. A classroom experiment may compare short and long chunks for the same document and inspect differences in retrieval relevance.
+
+The number of retrieved chunks is frequently controlled by a top-k or limit parameter. Setting k=5 requests up to five passages, not necessarily five whole sections or five pages. Filtering by a similarity threshold can return fewer than five results when few chunks meet the minimum score. A large document increases the number of available candidates, but it does not guarantee exactly five good matches for every question.
+
+====================================================================
+21. RAG retrieval: query design and source checking
+====================================================================
+
+To retrieve useful text, formulate a question that names the concepts and relationships of interest. 'Compare BFS and A* in frontier order, use of heuristic, optimality, and memory' is usually more informative than 'Tell me about search.' The embedding search then looks for chunks related to both breadth-first search and heuristic search. A keyword-heavy query might retrieve introductory definitions, while a comparison-oriented question should also retrieve comparative sections.
+
+Inspect the actual result passages. Are there several useful chunks, or does one section dominate the returned content? Do multiple passages repeat nearly identical facts? Are important details, such as the condition that BFS minimizes edges only for equal-cost moves, present? A high semantic-similarity score is a ranking signal, not a guarantee of factual coverage.
+
+In a reliable knowledge assistant, the language model should answer using the retrieved evidence and, when possible, cite the section or page from which the claim came. If no passage addresses the question, it should explain that the course material does not establish the answer. This is safer than inventing sources or claiming a document said something that was never indexed.
+
+====================================================================
+22. RAG evaluation experiment: five passages about BFS and A*
+====================================================================
+
+For a practical experiment, index this course text with a sentence-transformer embedding model and a vector database. Use the query: 'Compare BFS and A* in queue ordering, heuristic guidance, path optimality, weighted graphs, and search efficiency.' Request the top five relevant passages. Examine whether the retrieved chunks include the dedicated BFS introduction, the A* evaluation function, the direct comparison, heuristic conditions, and complexity tradeoffs.
+
+Vary retrieval limit among 1, 3, 5, and 8, and ask which setting offers the clearest answer without excess text. A limit of one might provide an incomplete comparison. A limit of five may supply enough variety to compare algorithm properties. A limit of eight could add redundant material or more detail than the task requires. The ideal setting depends on chunking, query quality, similarity threshold, and the document collection.
+
+Finally, run two experiments with the same retrieved passages. In the first, ask the LLM to produce a concise student-friendly answer. In the second, ask it to report which retrieved facts support each comparison item. The second experiment can help reveal unsupported leaps or claims drawn from model background knowledge rather than from the supplied text.
+
+====================================================================
+23. Choosing the right search technique for an application
+====================================================================
+
+Use BFS for shortest paths measured in number of moves when all moves cost the same. Use DFS when deep exploration, connectivity checking, or backtracking is useful and optimal shortest paths are not required. Use UCS when edges carry unequal nonnegative costs and there is no useful heuristic. Use A* when a suitable goal-directed heuristic is available and a least-cost path is needed under the relevant conditions.
+
+Examples include finding a minimum number of hallway transitions in a university floor plan, exploring dependencies in a graph, computing least-energy paths for warehouse vehicles, and navigating a drone around buildings. The choice is not purely about headline runtime complexity. Real input structure, number of states, edge-cost semantics, heuristic computation overhead, and memory availability often determine practical behavior.
+
+In an educational setting, students should implement multiple algorithms on the same graph, track expanded nodes, inspect reconstructed paths, and compare total path costs. They should also identify cases in which intuition fails: DFS can be lucky but nonoptimal, BFS can choose a high-cost weighted route, and A* can lose guarantees when its heuristic is allowed to overestimate.
+
+====================================================================
+24. Recap, definitions, and practice questions
+====================================================================
+
+BFS: expands nodes in increasing depth using a FIFO queue. DFS: explores along a branch using LIFO or recursion. UCS: expands nodes in increasing cumulative path cost g. Greedy best-first search: expands nodes using estimated remaining cost h. A*: expands nodes using estimated total path cost f=g+h. Admissible heuristic: never greater than the true remaining least cost. Consistent heuristic: satisfies the triangle-like inequality h(n)<=c(n,n')+h(n').
+
+Practice question A: Why does BFS find an optimal route on an unweighted grid, and what assumption fails when staircases carry extra cost? Practice question B: Explain why Manhattan distance is a useful heuristic for unit-cost four-directional movement. Practice question C: Trace BFS and A* on the same maze, showing frontier changes. Practice question D: Identify whether a proposed heuristic overestimates at any node and explain how that affects A* guarantees.
+
+Practice question E: A drone pays Euclidean travel distance plus an altitude-change penalty. Propose a lower-bound heuristic consistent with the model and justify it mathematically. Practice question F: Build a RAG assistant for this document, retrieve five passages relevant to comparing BFS and A*, and check that the final explanation is grounded in those passages.
