@@ -1,4 +1,10 @@
-# Agentic AI - Seminar examples
+<p align="left">
+  <img 
+    src="https://github.com/mariusstoica21/Agentic_AI/blob/main/images/Cover.png"
+  >
+</p>
+
+# Agentic AI - Seminar
 
 This repository contains two Jupyter Notebooks introducing **CrewAI**, a Python framework for building AI agents and multi-agent systems.
 
