@@ -6,9 +6,9 @@
 
 # Agentic AI - Seminar
 
-This repository contains two Jupyter Notebooks introducing **CrewAI**, a Python framework for building AI agents and multi-agent systems.
+This repository contains three Jupyter Notebooks introducing **CrewAI**, a Python framework for building AI agents and multi-agent systems.
 
-The seminars include practical examples using Google Gemini, external tools, Retrieval-Augmented Generation (RAG), and different agent execution strategies.
+The seminars include practical examples using Google Gemini, external tools, Retrieval-Augmented Generation (RAG), different agent execution strategies, agent memory, and semantic caching.
 
 ## Seminar 1 – Introduction to CrewAI
 
@@ -34,14 +34,25 @@ Explores more advanced CrewAI concepts through five examples:
 4. **Agent Reasoning:** An agent analyzes and plans its approach before executing a task.
 5. **Crew-Level Planning:** A planning component prepares execution instructions for multiple agents and tasks.
 
+## Seminar 3 – Agent Memory and Semantic Caching
+
+**File:** `Seminar_3.ipynb`
+
+Introduces memory management and caching in CrewAI through four practical examples:
+
+1. **Short-Term Memory (STM):** An interactive university AI tutor stores conversation history in a Python list and uses it to answer follow-up questions.
+2. **Automatic Long-Term Memory (LTM) Extraction:** A Memory Curator identifies, validates, and saves useful information from conversations to persistent JSON storage when a new session is started.
+3. **Memory Classification and Storage:** CrewAI's native `Memory` API classifies and stores user-profile, episodic, semantic, and procedural memories using persistent vector storage and scoped retrieval.
+4. **Keyword and Semantic Caching:** Sentence Transformer embeddings, cosine similarity, and Top-K retrieval identify reusable explanations, reducing unnecessary LLM calls when a cache hit occurs.
+
 ## Requirements
 
-The examples use **Python**, **Jupyter Notebook**, **CrewAI**, **Google Gemini**, and **CrewAI Tools**.
+The examples use **Python**, **Jupyter Notebook**, **CrewAI**, **Google Gemini**, and **CrewAI Tools**. Seminar 3 also uses **Pydantic**, **Sentence Transformers**, and **NumPy**.
 
 Install the main dependencies:
 
 ```bash
-pip install crewai crewai-tools python-dotenv sentence-transformers jupyter
+pip install crewai crewai-tools python-dotenv sentence-transformers pydantic numpy jupyter
 ```
 
 Create a `.env` file containing your API keys:
@@ -61,6 +72,6 @@ Start Jupyter Notebook:
 jupyter notebook
 ```
 
-Open `Seminar_1.ipynb` or `Seminar_2.ipynb` and execute the cells in order.
+Open `Seminar_1.ipynb`, `Seminar_2.ipynb`, or `Seminar_3.ipynb` and execute the cells in order.
 
 **Note:** Some examples require Internet access and valid API keys. Do not commit your `.env` file to GitHub.
